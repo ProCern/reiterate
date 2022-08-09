@@ -1,8 +1,5 @@
 local sard <const> = require 'sard'
 
--- Tools around receiving data.
-local module <const> = {}
-
 local function iter_forever(state)
   local value, time
   if state.timeout then
@@ -13,11 +10,14 @@ local function iter_forever(state)
   return time, value
 end
 
--- Return an infinite iterator that recvs forever and gives timestamps and
--- values.
+-- Return a possibly-infinite iterator that recvs forever and gives timestamps
+-- and values.
 -- The order is like this because valid values may be nil, which would stop
 -- iteration.
-function module.forever(key, timeout)
+-- If timeout is not specified, then it will iterate forever.
+--
+-- You can use a timeout of 0 to non-blockingly drain the queue.
+return function(key, timeout)
   assert(key)
   local state <const> = {
     key = key,
@@ -25,5 +25,3 @@ function module.forever(key, timeout)
   }
   return iter_forever, state
 end
-
-return module
