@@ -4,6 +4,8 @@ local enumerate <const> = require 'enumerate'
 local skip <const> = require 'skip'
 local take <const> = require 'take'
 local collect <const> = require 'collect'
+local reduce <const> = require 'reduce'
+local fold <const> = require 'fold'
 
 local metatable <const> = {
   __call = function(self, state, control)
@@ -15,17 +17,22 @@ local metatable <const> = {
   end,
 
   __index = {
+    iter = function(self)
+      return table.unpack(self, 1, self.n)
+    end,
+
     -- Wrap the chiterator's contained iterator with an iterator transformer.
     wrap = function(self, func, ...)
       local args <const> = table.pack(...)
-      args[args.n + 1] = self.iter
-      args[args.n + 2] = self.state
-      args[args.n + 3] = self.control
-      args[args.n + 4] = self.closing
-      args.n = args.n + 4
+      table.move(self, 1, self.n, args.n + 1, args)
+      args.n = args.n + self.n
 
-      self.iter, self.state, self.control, self.closing = func(table.unpack(args, 1, args.n))
-      return self, self.state, self.control, self.closing
+      local wrapped <const> = table.pack(func(table.unpack(args, 1, args.n)))
+      table.move(wrapped, 1, wrapped.n, 1, self)
+      table.move(wrapped, wrapped.n + 1, self.n, wrapped.n + 1, self)
+      self.n = wrapped.n
+
+      return self, table.unpack(self, 2, self.n)
     end,
 
     map = function(self, func)
@@ -48,20 +55,23 @@ local metatable <const> = {
       return self:wrap(take, n)
     end,
 
+    fold = function(self, init, fun)
+      return fold(init, fun, self:iter())
+    end,
+
     collect = function(self)
-      return collect(self.iter, self.state, self.control, self.closing)
+      return collect(self:iter())
+    end,
+
+    reduce = function(self, fun)
+      return reduce(fun, self:iter())
     end,
   }
 }
 
 -- Make an iterator into a chainable iterator, which allows creating iterators
 -- from others in a natural way.
-return function(iter, state, control, closing)
-  local self <const> = {
-    iter = iter,
-    state = state,
-    control = control,
-    closing = closing,
-  }
-  return setmetatable(self, metatable), state, control, closing
+return function(...)
+  local self <const> = table.pack(...)
+  return setmetatable(self, metatable), table.unpack(self, 2, self.n)
 end
