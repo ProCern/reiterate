@@ -7,12 +7,12 @@ local collect <const> = require 'collect'
 local reduce <const> = require 'reduce'
 local fold <const> = require 'fold'
 
----@class Chiterator
+---@class iter.Chiterator
 -- A chainable iterator, which allows chaining iterator transformations for more
 -- reasonable functional-style programming.
 --
 ---@field n integer
----@overload fun(...): Chiterator
+---@overload fun(...): iter.Chiterator
 local Chiterator <const> = {}
 
 function Chiterator:iter()
@@ -20,8 +20,8 @@ function Chiterator:iter()
 end
 
 -- Wrap the chiterator's contained iterator with an iterator transformer.
----@param func fun(...): Chiterator, ...
----@return Chiterator
+---@param func fun(...): iter.Chiterator, ...
+---@return iter.Chiterator
 function Chiterator:wrap(func, ...)
   local args <const> = table.pack(...)
   table.move(self, 1, self.n, args.n + 1, args)
@@ -38,7 +38,7 @@ end
 -- Wrap the iterator using a mapping function.
 -- This is a flat map that will skip any elements for which a nil is returned.
 ---@param func fun(...) A function that takes all the parameters of each iteration.
----@return Chiterator
+--- @return iter.Chiterator
 function Chiterator:map(func)
   return self:wrap(map, func)
 end
@@ -46,13 +46,13 @@ end
 -- Wrap with a filter, which will use a function that should return a truthy value
 -- to keep values in and a falsey one to filter them out.
 ---@param func fun(...) A function that takes all the parameters of each iteration.
----@return Chiterator
+--- @return iter.Chiterator
 function Chiterator:filter(func)
   return self:wrap(filter, func)
 end
 
 -- Prepend the iterator results with an enumeration from 1.
----@return Chiterator
+--- @return iter.Chiterator
 function Chiterator:enumerate()
   return self:wrap(enumerate)
 end
@@ -62,14 +62,14 @@ end
 -- to start working.  This immediately skips the items from the contained
 -- iterator.
 ---@param n integer The number of iterations to skip.
----@return Chiterator
+--- @return iter.Chiterator
 function Chiterator:skip(n)
   return self:wrap(skip, n)
 end
 
 -- Stop after n items.
 ---@param n integer The number of iterations to take.
----@return Chiterator
+--- @return iter.Chiterator
 function Chiterator:take(n)
   return self:wrap(take, n)
 end
