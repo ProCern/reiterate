@@ -8,82 +8,96 @@ local reduce <const> = require 'reduce'
 local fold <const> = require 'fold'
 
 ---@class Chiterator
-local Chiterator <const> = {
-  iter = function(self)
-    return table.unpack(self, 1, self.n)
-  end,
+-- A chainable iterator, which allows chaining iterator transformations for more
+-- reasonable functional-style programming.
+---@overload fun(...): Chiterator
+local Chiterator <const> = {}
 
-  -- Wrap the chiterator's contained iterator with an iterator transformer.
-  ---@return Chiterator
-  wrap = function(self, func, ...)
-    local args <const> = table.pack(...)
-    table.move(self, 1, self.n, args.n + 1, args)
-    args.n = args.n + self.n
+function Chiterator:iter()
+  return table.unpack(self, 1, self.n)
+end
 
-    local wrapped <const> = table.pack(func(table.unpack(args, 1, args.n)))
-    table.move(wrapped, 1, wrapped.n, 1, self)
-    table.move(wrapped, wrapped.n + 1, self.n, wrapped.n + 1, self)
-    self.n = wrapped.n
+-- Wrap the chiterator's contained iterator with an iterator transformer.
+---@param func fun(...): Chiterator, ...
+---@return Chiterator
+function Chiterator:wrap(func, ...)
+  local args <const> = table.pack(...)
+  table.move(self, 1, self.n, args.n + 1, args)
+  args.n = args.n + self.n
 
-    return self, table.unpack(self, 2, self.n)
-  end,
+  local wrapped <const> = table.pack(func(table.unpack(args, 1, args.n)))
+  table.move(wrapped, 1, wrapped.n, 1, self)
+  table.move(wrapped, wrapped.n + 1, self.n, wrapped.n + 1, self)
+  self.n = wrapped.n
 
-  -- Wrap the iterator using a mapping function.
-  -- This is a flat map that will skip any elements for which a nil is returned.
-  ---@return Chiterator
-  map = function(self, func)
-    return self:wrap(map, func)
-  end,
+  return self, table.unpack(self, 2, self.n)
+end
 
-  -- Wrap with a filter, which will use a function that should return a truthy value
-  -- to keep values in and a falsey one to filter them out.
-  ---@return Chiterator
-  filter = function(self, func)
-    return self:wrap(filter, func)
-  end,
+-- Wrap the iterator using a mapping function.
+-- This is a flat map that will skip any elements for which a nil is returned.
+---@param func fun(...) A function that takes all the parameters of each iteration.
+---@return Chiterator
+function Chiterator:map(func)
+  return self:wrap(map, func)
+end
 
-  -- Prepend the iterator results with an enumeration from 1.
-  ---@return Chiterator
-  enumerate = function(self)
-    return self:wrap(enumerate)
-  end,
+-- Wrap with a filter, which will use a function that should return a truthy value
+-- to keep values in and a falsey one to filter them out.
+---@param func fun(...) A function that takes all the parameters of each iteration.
+---@return Chiterator
+function Chiterator:filter(func)
+  return self:wrap(filter, func)
+end
 
-  -- Skip n items immediately.
-  -- Unlike most other wrappers, this doesn't wait until iteration has started
-  -- to start working.  This immediately skips the items from the contained
-  -- iterator.
-  ---@return Chiterator
-  skip = function(self, n)
-    return self:wrap(skip, n)
-  end,
+-- Prepend the iterator results with an enumeration from 1.
+---@return Chiterator
+function Chiterator:enumerate()
+  return self:wrap(enumerate)
+end
 
-  -- Stop after n items.
-  ---@return Chiterator
-  take = function(self, n)
-    return self:wrap(take, n)
-  end,
+-- Skip n items immediately.
+-- Unlike most other wrappers, this doesn't wait until iteration has started
+-- to start working.  This immediately skips the items from the contained
+-- iterator.
+---@param n integer The number of iterations to skip.
+---@return Chiterator
+function Chiterator:skip(n)
+  return self:wrap(skip, n)
+end
 
-  -- Fold the iterator into an accumulator (initiated with init) using function fun.
-  fold = function(self, init, fun)
-    return fold(init, fun, self:iter())
-  end,
+-- Stop after n items.
+---@param n integer The number of iterations to take.
+---@return Chiterator
+function Chiterator:take(n)
+  return self:wrap(take, n)
+end
 
-  -- Collect into a new table with the key and value being set from the first
-  -- two variables of each iteration of the iterator.
-  collect = function(self)
-    return collect(self:iter())
-  end,
+-- Fold the iterator into an accumulator (initiated with init) using function fun.
+---@generic T
+---@param init `T` The initial value for the accumulator
+---@param fun fun(T, ...): T A function that takes the accumulator and all the parameters of each iteration.
+---@return T
+function Chiterator:fold(init, fun)
+  return fold(init, fun, self:iter())
+end
 
-  -- Reduce the iterator using the function binary operation.  On the first two
-  -- iterations, the items are the first two iteration items (packed with
-  -- table.pack).  On all following iterations, the first item is the result of
-  -- the previous call, and the following items are each following iteration.
-  -- Returns the unpacked result from the last call.  If there is only one
-  -- element, returns that element.  Otherwise returns nothing.
-  reduce = function(self, fun)
-    return reduce(fun, self:iter())
-  end,
-}
+-- Collect into a new table with the key and value being set from the first
+-- two variables of each iteration of the iterator.
+function Chiterator:collect()
+  return collect(self:iter())
+end
+
+-- Reduce the iterator using the function binary operation.  On the first two
+-- iterations, the items are the first two iteration items (packed with
+-- table.pack).  On all following iterations, the first item is the result of
+-- the previous call, and the following items are each following iteration.
+-- Returns the unpacked result from the last call.  If there is only one
+-- element, returns that element.  Otherwise returns nothing.
+---@param fun fun(a: any[], b: any[]): ... A function that takes the first two iterations as packed tables, and then the returned values and all the following elements as packed tables.
+---@return ...
+function Chiterator:reduce(fun)
+  return reduce(fun, self:iter())
+end
 
 local metatable <const> = {
   __call = function(self, state, control)
@@ -95,12 +109,14 @@ local metatable <const> = {
   end,
 
   __index = Chiterator,
+
+  __name = 'Chiterator',
 }
 
--- Make an iterator into a chainable iterator, which allows creating iterators
--- from others in a natural way.
----@return Chiterator
-return function(...)
-  local self <const> = table.pack(...)
-  return setmetatable(self, metatable), table.unpack(self, 2, self.n)
-end
+---@diagnostic disable-next-line: param-type-mismatch
+return setmetatable(Chiterator, {
+  __call = function(_, ...)
+    local self <const> = table.pack(...)
+    return setmetatable(self, metatable), table.unpack(self, 2, self.n)
+  end
+})

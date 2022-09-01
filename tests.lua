@@ -2,7 +2,7 @@ local sard <const> = require 'sard'
 local json <const> = require 'sard.json'
 local cbor <const> = require 'sard.cbor'
 
-local chiterator <const> = require 'chiterator'
+local Chiterator <const> = require 'chiterator'
 local count <const> = require 'count'
 
 local Closeable = (function()
@@ -26,7 +26,7 @@ sard.test('chiterator', function()
   iterargs.n = 4
   iterargs[4] = closeable
 
-  local mapped <const> = chiterator(table.unpack(iterargs, 1, iterargs.n))
+  local mapped <const> = Chiterator(table.unpack(iterargs, 1, iterargs.n))
     :map(function(n) return n * n end)
     :enumerate()
     :filter(function(_, value) return value >= 25 end)
@@ -37,11 +37,11 @@ sard.test('chiterator', function()
   assert(json.dump(mapped) == '[[10,"25"],[12,"36"],[14,"49"],[16,"64"],[18,"81"],[20,"100"],[22,"121"]]')
   assert(closeable.closed)
 
-  assert(chiterator(count())
+  assert(Chiterator(count())
       :take(4)
       :reduce(function(a, b) return a[1] + b[1] end) == 10)
 
-  assert(cbor.dump(chiterator(count())
+  assert(cbor.dump(Chiterator(count())
       :take(5)
       :fold({}, function(accumulator, element)
         accumulator[10 - element] = element * element
@@ -55,21 +55,25 @@ sard.test('chiterator', function()
         [5] = 25,
       })
 
-  assert(chiterator(count())
+  assert(Chiterator(count())
     :skip(500)
     :take(1337)
     :reduce(function(a, b) return a[1] + b[1] end)
-    == chiterator(count())
+    == Chiterator(count())
     :skip(500)
     :take(1337)
     :fold(0, function(accumulator, element) return accumulator + element end))
 
-  assert(cbor.dump(chiterator(pairs{
+  assert(Chiterator(count())
+    :skip(500)
+    :take(1337)
+    :reduce(function(a, b) return a[1] + b[1] end) == 1562953)
+
+  assert(cbor.dump(Chiterator(pairs{
     aLpHa = 'FiRsT',
     BeTa = 'sEcOnD',
     gAmMa = 'ThIrD',
   }):map(function(key, value) return key:lower(), value:upper() end)
-
   :collect()) == cbor.dump{
     alpha = 'FIRST',
     beta = 'SECOND',

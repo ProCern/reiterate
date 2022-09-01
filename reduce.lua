@@ -5,7 +5,7 @@ local map <const> = require 'map'
 -- One major difference from fold is that the final return may be multiple
 -- values.
 return function(fun, ...)
-  local accumulator = {n = 0}
+  local accumulator
 
   for element in map(table.pack, ...) do
     if accumulator then
@@ -15,5 +15,7 @@ return function(fun, ...)
     end
   end
 
-  return table.unpack(accumulator, 1, accumulator.n)
+  if accumulator then
+    return table.unpack(accumulator, 1, accumulator.n)
+  end
 end
