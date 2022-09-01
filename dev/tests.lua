@@ -79,4 +79,14 @@ function tests.chiterator()
     beta = 'SECOND',
     gamma = 'THIRD',
   })
+
+  assert(Chiterator(ipairs{'fizz', 'buzz'}):any(function(_, v) return v == 'buzz' end))
+  assert(Chiterator(ipairs{'buzz', 'buzz'}):any(function(_, v) return v == 'buzz' end))
+  assert(not Chiterator(ipairs{'fizz', 'fizz'}):any(function(_, v) return v == 'buzz' end))
+  assert(not Chiterator(ipairs{}):any(function(_, v) return v == 'buzz' end))
+
+  assert(not Chiterator(ipairs{'fizz', 'buzz'}):all(function(_, v) return v == 'buzz' end))
+  assert(Chiterator(ipairs{'buzz', 'buzz'}):all(function(_, v) return v == 'buzz' end))
+  assert(not Chiterator(ipairs{'fizz', 'fizz'}):all(function(_, v) return v == 'buzz' end))
+  assert(Chiterator(ipairs{}):all(function(_, v) return v == 'buzz' end))
 end
