@@ -1,5 +1,5 @@
 local function once(value, control)
-  if not control then
+  if control == nil then
     return value
   end
 end
