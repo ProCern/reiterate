@@ -10,6 +10,8 @@ local fold <const> = require 'fold'
 ---@class Chiterator
 -- A chainable iterator, which allows chaining iterator transformations for more
 -- reasonable functional-style programming.
+--
+---@field n integer
 ---@overload fun(...): Chiterator
 local Chiterator <const> = {}
 
