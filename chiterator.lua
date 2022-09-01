@@ -1,3 +1,8 @@
+local all <const> = require 'all'
+local chain <const> = require 'chain'
+local zip <const> = require 'zip'
+local count <const> = require 'count'
+local any <const> = require 'any'
 local map <const> = require 'map'
 local filter <const> = require 'filter'
 local enumerate <const> = require 'enumerate'
@@ -19,20 +24,47 @@ function Chiterator:iter()
   return table.unpack(self, 1, self.n)
 end
 
--- Wrap the chiterator's contained iterator with an iterator transformer.
----@param func fun(...): iter.Chiterator, ...
+-- Replace the chiterator's contained iterator with a new iterator.
 ---@return iter.Chiterator
-function Chiterator:wrap(func, ...)
+function Chiterator:_replace(...)
+  local args <const> = table.pack(...)
+  table.move(args, 1, args.n, 1, self)
+  -- Wipe the rest if self was longer than args
+  table.move(args, args.n + 1, self.n, args.n + 1, self)
+  self.n = args.n
+
+  return self, table.unpack(self, 2, self.n)
+end
+
+-- Wrap the chiterator's contained iterator with an iterator transformer,
+-- appending the currently wrapped iterator onto the end.
+---@param func fun(...): ...
+---@return iter.Chiterator
+function Chiterator:_wrap_appended(func, ...)
+  -- Append the current iterator's arguments onto the end of the incoming args
+  -- array.
   local args <const> = table.pack(...)
   table.move(self, 1, self.n, args.n + 1, args)
   args.n = args.n + self.n
 
-  local wrapped <const> = table.pack(func(table.unpack(args, 1, args.n)))
-  table.move(wrapped, 1, wrapped.n, 1, self)
-  table.move(wrapped, wrapped.n + 1, self.n, wrapped.n + 1, self)
-  self.n = wrapped.n
+  return self:_replace(func(table.unpack(args, 1, args.n)))
+end
 
-  return self, table.unpack(self, 2, self.n)
+-- Wraps the iterator into a chaining iterator, which will iterate all given
+-- iterators in turn.
+--- @return iter.Chiterator
+function Chiterator:chain(...)
+  return self:_replace(chain(table.pack(self:iter()), table.pack(...)))
+end
+
+-- Wraps this and the iterator into a zipping iterator, which will iterate all
+-- given iterators at once, giving all their values in table.pack bunches.
+-- Because of the way Lua iterators work, each iterator needs to be packed
+-- either via table.pack or as a plain array table. This stops as soon as any
+-- zipped iterator contained stops.
+--- @return iter.Chiterator
+function Chiterator:zip(...)
+  return self:_replace(zip(table.pack(self:iter()), table.pack(...)))
 end
 
 -- Wrap the iterator using a mapping function.
@@ -40,7 +72,7 @@ end
 ---@param func fun(...) A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function Chiterator:map(func)
-  return self:wrap(map, func)
+  return self:_wrap_appended(map, func)
 end
 
 -- Wrap with a filter, which will use a function that should return a truthy value
@@ -48,13 +80,13 @@ end
 ---@param func fun(...) A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function Chiterator:filter(func)
-  return self:wrap(filter, func)
+  return self:_wrap_appended(filter, func)
 end
 
 -- Prepend the iterator results with an enumeration from 1.
 --- @return iter.Chiterator
 function Chiterator:enumerate()
-  return self:wrap(enumerate)
+  return self:_wrap_appended(enumerate)
 end
 
 -- Skip n items immediately.
@@ -64,14 +96,14 @@ end
 ---@param n integer The number of iterations to skip.
 --- @return iter.Chiterator
 function Chiterator:skip(n)
-  return self:wrap(skip, n)
+  return self:_wrap_appended(skip, n)
 end
 
 -- Stop after n items.
 ---@param n integer The number of iterations to take.
 --- @return iter.Chiterator
 function Chiterator:take(n)
-  return self:wrap(take, n)
+  return self:_wrap_appended(take, n)
 end
 
 -- Fold the iterator into an accumulator (initiated with init) using function fun.
@@ -101,19 +133,34 @@ function Chiterator:reduce(fun)
   return reduce(fun, self:iter())
 end
 
+-- Returns true if all the iterator control values evaluate true.
+-- An empty iterator evaluates true.
+function Chiterator:all()
+  return all(self:iter())
+end
+
+-- Returns true if any the iterator control values evaluate true.
+-- An empty iterator evaluates false.
+function Chiterator:any()
+  return any(self:iter())
+end
+
+-- Consumes and counts iterations of this iterator.
+function Chiterator:count()
+  return count(self:iter())
+end
+
 local metatable <const> = {
   __call = function(self, state, control)
-    -- Allow updating self.control.  This shouldn't usually be necessary, but
-    -- will allow for interruptible and resumable chiterators.
-    local values = table.pack(self.iter(state, control))
-    self.control = values[1]
-    return table.unpack(values, 1, values.n)
+    return self[1](state, control)
   end,
 
   __index = Chiterator,
 
   __name = 'Chiterator',
 }
+
+
 
 ---@diagnostic disable-next-line: param-type-mismatch
 return setmetatable(Chiterator, {

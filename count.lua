@@ -1,8 +1,8 @@
-local function count(_, last)
-  return last + 1
-end
-
--- Just count from 1.
-return function()
-  return count, nil, 0
+-- Consumes the iterator, returning the number of iterations it yielded.
+return function(...)
+  local i = 0
+  for _ in ... do
+    i = i + 1
+  end
+  return i
 end
