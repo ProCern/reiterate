@@ -1,10 +1,16 @@
--- Returns true if all the iterator control values evaluate true.
+-- Returns true if each iteration of the iterator evaluates true through the
+-- predicate function.
 -- An empty iterator evaluates true.
-return function(...)
-  for cv in ... do
-    if not cv then
+return function(predicate, ...)
+  local iter <const>, state <const>, control, close <close> = ...
+  while true do
+    local values <const> = table.pack(iter(state, control))
+    if values[1] == nil then
+      return true
+    end
+    control = values[1]
+    if not predicate(table.unpack(values, 1, values.n)) then
       return false
     end
   end
-  return true
 end

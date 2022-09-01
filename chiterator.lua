@@ -133,16 +133,24 @@ function Chiterator:reduce(fun)
   return reduce(fun, self:iter())
 end
 
--- Returns true if all the iterator control values evaluate true.
--- An empty iterator evaluates true.
-function Chiterator:all()
-  return all(self:iter())
+local function default_predicate(...)
+  return ...
 end
 
--- Returns true if any the iterator control values evaluate true.
+-- Returns true if the predicate evaluates true for all iterations.
+-- If the predicate is absent, the iterator control variable is just checked
+-- for truthiness.
+-- An empty iterator evaluates true.
+function Chiterator:all(predicate)
+  return all(predicate or default_predicate, self:iter())
+end
+
+-- Returns true if the predicate evaluates true for any iteration.
+-- If the predicate is absent, the iterator control variable is just checked
+-- for truthiness.
 -- An empty iterator evaluates false.
-function Chiterator:any()
-  return any(self:iter())
+function Chiterator:any(predicate)
+  return any(predicate or default_predicate, self:iter())
 end
 
 -- Consumes and counts iterations of this iterator.

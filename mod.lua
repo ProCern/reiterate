@@ -1,1 +1,1 @@
-require 'tests'
+pcall(require, 'dev.tests')
