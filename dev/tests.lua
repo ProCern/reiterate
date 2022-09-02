@@ -22,6 +22,17 @@ local Closeable = (function()
   end
 end)()
 
+-- Just yields each input, returning the last one.
+local function yield_all(...)
+  local count = select('#', ...)
+  for i=1, count - 1 do
+    coroutine.yield(select(i, ...))
+  end
+  if count > 0 then
+    return select(count, ...)
+  end
+end
+
 function tests.chiterator()
   local closeable = Closeable()
 
@@ -45,7 +56,7 @@ function tests.chiterator()
       :take(4)
       :reduce(function(a, b) return a[1] + b[1] end), 10)
 
-  assert.eq(Chiterator(counter())
+  assert.eq(Chiterator.counter()
       :take(5)
       :fold({}, function(accumulator, element)
         accumulator[10 - element] = element * element
@@ -59,7 +70,7 @@ function tests.chiterator()
         [5] = 25,
       })
 
-  assert.eq(Chiterator(counter())
+  assert.eq(Chiterator.counter()
     :skip(500)
     :take(1337)
     :reduce(function(a, b) return a[1] + b[1] end),
@@ -68,7 +79,7 @@ function tests.chiterator()
     :take(1337)
     :fold(0, function(accumulator, element) return accumulator + element end))
 
-  assert.eq(Chiterator(counter())
+  assert.eq(Chiterator.counter()
     :skip(500)
     :take(1337)
     :reduce(function(a, b) return a[1] + b[1] end), 1562953)
@@ -96,17 +107,7 @@ function tests.chiterator()
   assert.eq(Chiterator(once(17)):chain(once(24)):chain(once(false)):enumerate():collect(), {17, 24, false})
 end
 
--- Just yields each input, returning the last one.
-local function yield_all(...)
-  local count = select('#', ...)
-  for i=1, count - 1 do
-    coroutine.yield(select(i, ...))
-  end
-  if count > 0 then
-    return select(count, ...)
-  end
-end
-
 function tests.coro()
   assert.eq(collect(enumerate(coro(yield_all, 'foo', 'bar', 'baz'))), {'foo', 'bar', 'baz'})
+  assert.eq(Chiterator.coro(yield_all, 'foo', 'bar', 'baz'):enumerate():collect(), {'foo', 'bar', 'baz'})
 end

@@ -11,6 +11,8 @@ local take <const> = require 'take'
 local collect <const> = require 'collect'
 local reduce <const> = require 'reduce'
 local fold <const> = require 'fold'
+local counter <const> = require 'counter'
+local coro <const> = require 'coro'
 
 ---@class iter.Chiterator
 -- A chainable iterator, which allows chaining iterator transformations for more
@@ -19,6 +21,16 @@ local fold <const> = require 'fold'
 ---@field n integer
 ---@overload fun(...): iter.Chiterator
 local Chiterator <const> = {}
+
+--- @return iter.Chiterator
+function Chiterator.counter()
+  return Chiterator(counter())
+end
+
+--- @return iter.Chiterator
+function Chiterator.coro(...)
+  return Chiterator(coro(...))
+end
 
 function Chiterator:iter()
   return table.unpack(self, 1, self.n)
