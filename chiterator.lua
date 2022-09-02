@@ -1,18 +1,20 @@
 local all <const> = require 'all'
-local chain <const> = require 'chain'
-local zip <const> = require 'zip'
-local count <const> = require 'count'
 local any <const> = require 'any'
-local map <const> = require 'map'
-local filter <const> = require 'filter'
-local enumerate <const> = require 'enumerate'
-local skip <const> = require 'skip'
-local take <const> = require 'take'
+local chain <const> = require 'chain'
 local collect <const> = require 'collect'
-local reduce <const> = require 'reduce'
-local fold <const> = require 'fold'
-local counter <const> = require 'counter'
 local coro <const> = require 'coro'
+local count <const> = require 'count'
+local counter <const> = require 'counter'
+local enumerate <const> = require 'enumerate'
+local filter <const> = require 'filter'
+local fold <const> = require 'fold'
+local map <const> = require 'map'
+local reduce <const> = require 'reduce'
+local skip <const> = require 'skip'
+local skip_while <const> = require 'skip_while'
+local take <const> = require 'take'
+local take_while <const> = require 'take_while'
+local zip <const> = require 'zip'
 
 ---@class iter.Chiterator
 -- A chainable iterator, which allows chaining iterator transformations for more
@@ -111,11 +113,28 @@ function Chiterator:skip(n)
   return self:_wrap_appended(skip, n)
 end
 
+-- Skip items immediately while the predicate is true.
+-- Unlike most other wrappers, this doesn't wait until iteration has started
+-- to start working.  This immediately skips the items from the contained
+-- iterator.
+---@param predicate fun(...): boolean
+--- @return iter.Chiterator
+function Chiterator:skip_while(predicate)
+  return self:_wrap_appended(skip_while, predicate)
+end
+
 -- Stop after n items.
 ---@param n integer The number of iterations to take.
 --- @return iter.Chiterator
 function Chiterator:take(n)
   return self:_wrap_appended(take, n)
+end
+
+-- Stop when the predicate is false
+---@param predicate fun(...): boolean
+--- @return iter.Chiterator
+function Chiterator:take_while(predicate)
+  return self:_wrap_appended(take_while, predicate)
 end
 
 -- Fold the iterator into an accumulator (initiated with init) using function fun.

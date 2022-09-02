@@ -1,10 +1,10 @@
-local function once(value, control)
+local function once(values, control)
   if control == nil then
-    return value
+    return table.unpack(values, 1, values.n)
   end
 end
 
--- Just gives the supplied value once.
-return function(value)
-  return once, value
+-- Just gives the supplied values once.
+return function(...)
+  return once, table.pack(...)
 end

@@ -32,14 +32,13 @@ local function call(self)
 
     output[#output+1] = values
   end
-  return output
+  return table.unpack(output)
 end
 
 ---@diagnostic disable-next-line: param-type-mismatch
 return setmetatable(Zip, {
   __call = function(_, ...)
     local self <const> = table.pack(...)
-    self.current = 1
     setmetatable(self, metatable)
     return call, self, nil, self
   end,

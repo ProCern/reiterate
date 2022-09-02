@@ -105,6 +105,49 @@ function tests.chiterator()
   assert(not Chiterator(ipairs{'fizz', 'fizz'}):all(function(_, v) return v == 'buzz' end))
   assert(Chiterator(ipairs{}):all(function(_, v) return v == 'buzz' end))
   assert.eq(Chiterator(once(17)):chain(once(24)):chain(once(false)):enumerate():collect(), {17, 24, false})
+
+  assert.eq(Chiterator.counter()
+    :map(function(i) return i * i end)
+    :skip(9)
+    :enumerate()
+    :map(function(i, v) return 100 - i, v end)
+    :take(10)
+    :zip(Chiterator.counter()
+      :skip(10)
+      :enumerate()
+      :take(5))
+    :collect(), {
+      [{ 99, 100, n = 2 }] = { 1, 11, n = 2 },
+      [{ 98, 121, n = 2 }] = { 2, 12, n = 2 },
+      [{ 97, 144, n = 2 }] = { 3, 13, n = 2 },
+      [{ 96, 169, n = 2 }] = { 4, 14, n = 2 },
+      [{ 95, 196, n = 2 }] = { 5, 15, n = 2 },
+    })
+
+  assert.eq(Chiterator.counter()
+    :map(function(i) return i * i end)
+    :skip(9)
+    :enumerate()
+    :map(function(i, v) return 100 - i, v end)
+    :zip(Chiterator.counter()
+      :skip(10)
+      :enumerate()
+      :take(5))
+    :map(function(a, b) return {a, b} end)
+    :enumerate()
+    :collect(), {
+      { { 99, 100, n = 2 }, { 1, 11, n = 2 } },
+      { { 98, 121, n = 2 }, { 2, 12, n = 2 } },
+      { { 97, 144, n = 2 }, { 3, 13, n = 2 } },
+      { { 96, 169, n = 2 }, { 4, 14, n = 2 } },
+      { { 95, 196, n = 2 }, { 5, 15, n = 2 } },
+    })
+
+  assert.eq(Chiterator.counter()
+    :skip_while(function(i) return i < 15 end)
+    :take_while(function(i) return i < 20 end)
+    :enumerate()
+    :collect(), {15, 16, 17, 18, 19})
 end
 
 function tests.coro()
