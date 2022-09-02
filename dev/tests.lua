@@ -4,6 +4,9 @@ local assert = require 'testing.assert'
 local Chiterator <const> = require 'chiterator'
 local counter <const> = require 'counter'
 local once <const> = require 'once'
+local coro <const> = require 'coro'
+local collect <const> = require 'collect'
+local enumerate <const> = require 'enumerate'
 
 local Closeable = (function()
   local metatable <const> = {
@@ -91,4 +94,19 @@ function tests.chiterator()
   assert(not Chiterator(ipairs{'fizz', 'fizz'}):all(function(_, v) return v == 'buzz' end))
   assert(Chiterator(ipairs{}):all(function(_, v) return v == 'buzz' end))
   assert.eq(Chiterator(once(17)):chain(once(24)):chain(once(false)):enumerate():collect(), {17, 24, false})
+end
+
+-- Just yields each input, returning the last one.
+local function yield_all(...)
+  local count = select('#', ...)
+  for i=1, count - 1 do
+    coroutine.yield(select(i, ...))
+  end
+  if count > 0 then
+    return select(count, ...)
+  end
+end
+
+function tests.coro()
+  assert.eq(collect(enumerate(coro(yield_all, 'foo', 'bar', 'baz'))), {'foo', 'bar', 'baz'})
 end

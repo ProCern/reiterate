@@ -13,6 +13,15 @@ local metatable <const> = {
   end,
 }
 
+-- Check the coroutine return values.
+local function check(success, ...)
+  if success then
+    return ...
+  else
+    error((...), 2)
+  end
+end
+
 ---@param self iter.Coro
 local function call(self)
   local status <const> = coroutine.status(self.coroutine)
@@ -26,9 +35,9 @@ local function call(self)
       table.move({}, 1, self.n, 1, self)
       self.n = nil
 
-      return coroutine.resume(self.coroutine, table.unpack(args, 1, args.n))
+      return check(coroutine.resume(self.coroutine, table.unpack(args, 1, args.n)))
     else
-      return coroutine.resume(self.coroutine)
+      return check(coroutine.resume(self.coroutine))
     end
   end
 end
