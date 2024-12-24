@@ -1,6 +1,6 @@
-local MaybeClose = require '_maybe_close'
-local chain = require 'chain'
-local once = require 'once'
+local MaybeClose = require 'iter._maybe_close'
+local chain = require 'iter.chain'
+local once = require 'iter.once'
 
 -- Take an incoming iterator and skip while the predicate is true for the
 -- values. This operates immediately when called.  If the end is reached early,
@@ -18,7 +18,9 @@ return function(predicate, iter, state, control, ...)
     end
     if not predicate(table.unpack(values, 1, values.n)) then
       closer.close = false
-      return chain(table.pack(once(table.unpack(values, 1, values.n))), table.pack(iter, state, control, ...))
+      return chain(
+        table.pack(once(table.unpack(values, 1, values.n))),
+        table.pack(iter, state, control, ...))
     end
   end
 end

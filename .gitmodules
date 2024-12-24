@@ -1,3 +1,0 @@
-[submodule "dev/testing"]
-	path = dev/testing
-	url = git@bitbucket.org:absperf/testing.git

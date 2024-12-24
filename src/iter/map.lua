@@ -1,17 +1,21 @@
-local function map(self)
-  local values = table.pack(self.iter(self.state, self.control))
+local pack = table.pack
+local unpack = table.unpack
+
+local function map(self, cv)
+  local state = self.state
+  local values = pack(self.iter(state, self.control))
   self.control = values[1]
   if self.control == nil then
     return
   end
 
-  values = table.pack(self.func(table.unpack(values, 1, values.n)))
+  values = pack(self.func(unpack(values, 1, values.n)))
 
   -- Filter, do next iteration.
   if values[1] == nil then
     return map(self)
   else
-    return table.unpack(values, 1, values.n)
+    return unpack(values, 1, values.n)
   end
 end
 
@@ -24,5 +28,5 @@ return function(func, iter, state, control, ...)
     state = state,
     control = control,
   }
-  return map, self, nil, ...
+  return map, self, 'cv', ...
 end

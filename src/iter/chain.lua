@@ -7,14 +7,31 @@
 ---@overload fun(...): iter.Chain
 local Chain <const> = {}
 
-local metatable <const> = {
-  __close = function(self)
-    -- Close remaining unclosed iterators
-    for i=self.current, self.n do
-      local _ <close> = self[i][4]
+local function close(value)
+  local _ <close> = value
+end
+
+local metatable <const> = {}
+
+-- A recursive solution is nicer than this, but may lead to stack overflow
+function metatable:__close()
+  local throw = false
+  local messages = {}
+  -- Close remaining unclosed iterators
+  for i=self.current, self.n do
+    local close_value = self[i][4]
+    if close_value ~= nil then
+      local success, message = pcall(close, close_value)
+      if not success then
+        throw = true
+        messages[#messages + 1] = message
+      end
     end
-  end,
-}
+  end
+  if throw then
+    error(table.concat(messages, '\n'))
+  end
+end
 
 ---@param self iter.Chain
 local function call(self)
@@ -27,11 +44,15 @@ local function call(self)
     else
       -- Proceed to the next one, closing this one first in a way that allows
       -- proper tail calls.
+      local prev_current = self.current
+
+      -- So the auto-close works even if this throws an error, rather than
+      -- re-closing the current.
+      self.current = self.current + 1
       do
         local _ <close> = current[4]
-        self[self.current] = nil
+        self[prev_current] = nil
       end
-      self.current = self.current + 1
       return call(self)
     end
   end

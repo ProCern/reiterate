@@ -1,4 +1,7 @@
-local MaybeClose = require '_maybe_close'
+local MaybeClose = require 'iter._maybe_close'
+
+local function noop()
+end
 
 -- Take an incoming iterator and skip the first n values.
 -- This operates immediately when called.  If the end is reached early, this
@@ -11,7 +14,7 @@ return function(n, iter, state, control, ...)
     control = iter(state, control)
     if control == nil then
       closer.close = false
-      return function() end, nil, nil, ...
+      return noop, nil, nil, ...
     end
   end
   closer.close = false

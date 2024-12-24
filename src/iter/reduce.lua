@@ -1,4 +1,4 @@
-local map <const> = require 'map'
+local map <const> = require 'iter.map'
 
 -- Similar to fold, but applies an operation to successive iterations of the
 -- iterator, passing packed tables as arguments to the function.
