@@ -1,26 +1,34 @@
-local MaybeClose = require 'iter._maybe_close'
-local chain = require 'iter.chain'
-local once = require 'iter.once'
+local pack = table.pack
+local unpack = table.unpack
 
--- Take an incoming iterator and skip while the predicate is true for the
--- values. This operates immediately when called.  If the end is reached early,
--- this will return a no-op iterator and forward the closing.
-return function(predicate, iter, state, control, ...)
-  -- Emergency closer, in case the iter method throws an error, we still want to
-  -- opportunistically close as early as possible.
-  local closer <close> = MaybeClose(...)
-  while true do
-    local values <const> = table.pack(iter(state, control))
-    control = values[1]
-    if values[1] == nil then
-      closer.close = false
-      return function() end, nil, nil, ...
+local function skip(state, control)
+  local predicate = state.predicate
+  local iter = state.iter
+  local inner = state.state
+
+  if predicate == nil then
+    return iter(inner, control)
+  else
+    local output = pack(iter(inner, control))
+
+    while predicate ~= nil and output[1] ~= nil do
+      if predicate(unpack(output, 1, output.n)) then
+        output = pack(iter(inner, output[1]))
+      else
+        predicate = nil
+        state.predicate = nil
+      end
     end
-    if not predicate(table.unpack(values, 1, values.n)) then
-      closer.close = false
-      return chain(
-        table.pack(once(table.unpack(values, 1, values.n))),
-        table.pack(iter, state, control, ...))
-    end
+    return unpack(output, 1, output.n)
   end
+end
+
+-- Take an incoming iterator and skip the first n values.
+return function(predicate, iter, state, control, ...)
+  local state = {
+    iter = iter,
+    state = state,
+    predicate = predicate,
+  }
+  return skip, state, control, ...
 end

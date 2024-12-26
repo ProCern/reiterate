@@ -16,6 +16,13 @@ local take <const> = require 'iter.take'
 local take_while <const> = require 'iter.take_while'
 local zip <const> = require 'iter.zip'
 
+local table_pack <const> = table.pack
+local table_unpack <const> = table.unpack
+local setmetatable <const> = setmetatable
+
+-- global protection
+local _ENV <const> = nil
+
 ---@class iter.Chiterator
 -- A chainable iterator, which allows chaining iterator transformations for more
 -- reasonable functional-style programming.
@@ -24,51 +31,52 @@ local zip <const> = require 'iter.zip'
 ---@overload fun(...): iter.Chiterator
 local Chiterator <const> = {}
 
+local metatable <const> = {
+  __index = Chiterator,
+
+  __name = 'Chiterator',
+}
+
+function metatable:__call(state, control)
+  return self[1](state, control)
+end
+
+local function construct(iter, ...)
+  local self <const> = table_pack(iter, ...)
+  -- Construct a chiterator, wrapping with the metatable, and unpacking the
+  -- rest and returning them so they can be auto-closed and the like properly.
+  return setmetatable(self, metatable), ...
+end
+
+local class_metatable = {
+  __name = 'class Chiterator',
+}
+
+function class_metatable:__call(...)
+  return construct(...)
+end
+
+setmetatable(Chiterator, class_metatable)
+
 --- @return iter.Chiterator
 function Chiterator.counter()
-  return Chiterator(counter())
+  return construct(counter())
 end
 
 --- @return iter.Chiterator
 function Chiterator.coro(...)
-  return Chiterator(coro(...))
+  return construct(coro(...))
 end
 
 function Chiterator:iter()
-  return table.unpack(self, 1, self.n)
-end
-
--- Replace the chiterator's contained iterator with a new iterator.
----@return iter.Chiterator
-function Chiterator:_replace(...)
-  local args <const> = table.pack(...)
-  table.move(args, 1, args.n, 1, self)
-  -- Wipe the rest if self was longer than args
-  table.move(args, args.n + 1, self.n, args.n + 1, self)
-  self.n = args.n
-
-  return self, table.unpack(self, 2, self.n)
-end
-
--- Wrap the chiterator's contained iterator with an iterator transformer,
--- appending the currently wrapped iterator onto the end.
----@param func fun(...): ...
----@return iter.Chiterator
-function Chiterator:_wrap_appended(func, ...)
-  -- Append the current iterator's arguments onto the end of the incoming args
-  -- array.
-  local args <const> = table.pack(...)
-  table.move(self, 1, self.n, args.n + 1, args)
-  args.n = args.n + self.n
-
-  return self:_replace(func(table.unpack(args, 1, args.n)))
+  return table_unpack(self, 1, self.n)
 end
 
 -- Wraps the iterator into a chaining iterator, which will iterate all given
 -- iterators in turn.
 --- @return iter.Chiterator
 function Chiterator:chain(...)
-  return self:_replace(chain(table.pack(self:iter()), table.pack(...)))
+  return construct(chain(table_pack(self:iter()), table_pack(...)))
 end
 
 -- Wraps this and the iterator into a zipping iterator, which will iterate all
@@ -78,7 +86,7 @@ end
 -- zipped iterator contained stops.
 --- @return iter.Chiterator
 function Chiterator:zip(...)
-  return self:_replace(zip(table.pack(self:iter()), table.pack(...)))
+  return construct(zip(table_pack(self:iter()), table_pack(...)))
 end
 
 -- Wrap the iterator using a mapping function.
@@ -86,7 +94,7 @@ end
 ---@param func fun(...) A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function Chiterator:map(func)
-  return self:_wrap_appended(map, func)
+  return construct(map(func, table_unpack(self, 1, self.n)))
 end
 
 -- Wrap with a filter, which will use a function that should return a truthy value
@@ -94,13 +102,13 @@ end
 ---@param func fun(...) A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function Chiterator:filter(func)
-  return self:_wrap_appended(filter, func)
+  return construct(filter(func, table_unpack(self, 1, self.n)))
 end
 
 -- Prepend the iterator results with an enumeration from 1.
 --- @return iter.Chiterator
 function Chiterator:enumerate()
-  return self:_wrap_appended(enumerate)
+  return construct(enumerate(table_unpack(self, 1, self.n)))
 end
 
 -- Skip n items immediately.
@@ -110,7 +118,7 @@ end
 ---@param n integer The number of iterations to skip.
 --- @return iter.Chiterator
 function Chiterator:skip(n)
-  return self:_wrap_appended(skip, n)
+  return construct(skip(n, table_unpack(self, 1, self.n)))
 end
 
 -- Skip items immediately while the predicate is true.
@@ -120,21 +128,21 @@ end
 ---@param predicate fun(...): boolean
 --- @return iter.Chiterator
 function Chiterator:skip_while(predicate)
-  return self:_wrap_appended(skip_while, predicate)
+  return construct(skip_while(predicate, table_unpack(self, 1, self.n)))
 end
 
 -- Stop after n items.
 ---@param n integer The number of iterations to take.
 --- @return iter.Chiterator
 function Chiterator:take(n)
-  return self:_wrap_appended(take, n)
+  return construct(take(n, table_unpack(self, 1, self.n)))
 end
 
 -- Stop when the predicate is false
 ---@param predicate fun(...): boolean
 --- @return iter.Chiterator
 function Chiterator:take_while(predicate)
-  return self:_wrap_appended(take_while, predicate)
+  return construct(take_while(predicate, table_unpack(self, 1, self.n)))
 end
 
 -- Fold the iterator into an accumulator (initiated with init) using function fun.
@@ -146,7 +154,7 @@ function Chiterator:fold(init, fun)
   return fold(init, fun, self:iter())
 end
 
--- Collect into a new table with the key and value being set from the first
+-- Collect into a construct table with the key and value being set from the first
 -- two variables of each iteration of the iterator.
 function Chiterator:collect()
   return collect(self:iter())
@@ -189,22 +197,4 @@ function Chiterator:count()
   return count(self:iter())
 end
 
-local metatable <const> = {
-  __call = function(self, state, control)
-    return self[1](state, control)
-  end,
-
-  __index = Chiterator,
-
-  __name = 'Chiterator',
-}
-
-
-
----@diagnostic disable-next-line: param-type-mismatch
-return setmetatable(Chiterator, {
-  __call = function(_, ...)
-    local self <const> = table.pack(...)
-    return setmetatable(self, metatable), table.unpack(self, 2, self.n)
-  end
-})
+return Chiterator
