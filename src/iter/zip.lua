@@ -1,3 +1,5 @@
+local close_list = require 'iter._close_iterlist'
+
 -- Wraps iterators into a zipping iterator, which will iterate all given
 -- iterators at once, giving all their values in table.pack bunches.  Because of
 -- the way Lua iterators work, each iterator needs to be packed either via
@@ -5,18 +7,11 @@
 -- This stops as soon as any zipped iterator contained stops.
 ---@class iter.Zip
 ---@field n integer
----@field current integer
----@overload fun(...): iter.Zip
-local Zip <const> = {}
+local metatable <const> = {}
 
-local metatable <const> = {
-  __close = function(self)
-    -- Close all iterators
-    for i=1, self.n do
-      local _ <close> = self[i][4]
-    end
-  end,
-}
+function metatable:__close()
+  close_list(self, 1, self.n)
+end
 
 ---@param self iter.Zip
 local function call(self)
@@ -35,11 +30,8 @@ local function call(self)
   return table.unpack(output)
 end
 
----@diagnostic disable-next-line: param-type-mismatch
-return setmetatable(Zip, {
-  __call = function(_, ...)
-    local self <const> = table.pack(...)
-    setmetatable(self, metatable)
-    return call, self, nil, self
-  end,
-})
+---@return (fun(coro: iter.Zip): any[]), iter.Zip, nil, iter.Zip
+return function(...)
+  local zip = setmetatable(table.pack(...), metatable)
+  return call, zip, nil, zip
+end

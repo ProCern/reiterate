@@ -285,7 +285,7 @@ end
 
 local total = 0
 local failures = 0
-for i, v in ipairs(tests) do
+for _, v in ipairs(tests) do
   total = total + 1
   local success, message = xpcall(v.test, msgh)
   if not success then

@@ -6,7 +6,7 @@ return function(predicate, ...)
   while true do
     local values <const> = table.pack(iter(state, control))
     control = values[1]
-    if values[1] == nil then
+    if control == nil then
       return true
     end
     if not predicate(table.unpack(values, 1, values.n)) then
