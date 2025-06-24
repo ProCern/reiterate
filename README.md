@@ -52,7 +52,8 @@ to the language or work with other Lua-native iterators.
 local Chiterator = require 'iter.chiterator'
 
 -- Find the first 5 even square numbers
-local result = Chiterator.counter()
+local result =
+    Chiterator.counter()
     :map(function(i) return i * i end)
     :filter(function(n) return n % 2 == 0 end)
     :take(5)
@@ -60,6 +61,30 @@ local result = Chiterator.counter()
         acc[#acc+1] = val
         return acc
     end)
+
+-- result is {4, 16, 36, 64, 100}
+for i, v in ipairs(result) do
+  print(i, v)
+end
+
+-- The same as the above, but less efficient.
+-- This demonstrates lazy evaluation, as it will check every even number
+-- until it finds 5 that are also square numbers.
+local function is_square(n)
+  local root = math.sqrt(n)
+  return root == math.floor(root)
+end
+
+local result =
+    Chiterator.counter()
+    :zip(
+        Chiterator.counter()
+        :filter(is_square)
+        :filter(function(n) return n % 2 == 0 end)
+    )
+    :take(5)
+    :map(function(i, s) return i[1], s[1] end)
+    :collect()
 
 -- result is {4, 16, 36, 64, 100}
 for i, v in ipairs(result) do
