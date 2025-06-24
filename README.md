@@ -4,6 +4,41 @@ A functional-style iterator library for Lua, inspired by Rust's iterators.
 
 It provides a `Chiterator` object that allows for chaining iterator transformations.
 
+## Principles
+
+This library is written to be as thin and modular as possible.  Most adapters
+take a Lua iterator (i.e. a function, state, cv, closeable set) and return
+the same.  They don't try to encapsulate things like the state and cv within
+themselves where they don't need to.  If they can operate on the same CV as the
+iterator they wrap (like `take` and `skip`) then they will do so, and not keep
+the CV within themselves.  If they can't (such as `enumerate`, which changes the
+CV), only then will they take the CV into themselves.
+
+EVen if they do take the CV into themselves, they often return a function,
+state, and CV as separate components that are needed for iteration, matching Lua
+semantics as closely as possible.
+
+This extends to `Chiterator`, which, when used as an iterator directly, will use
+the `for` loop's CV and even state.  It takes the CV and state into itself, but
+these are only used for chaining.
+
+This means that you can't simply assign an iterator or `Chiterator` to a
+variable and use it. Like Lua iterators, if you want to store them as a
+variable, you must `table.pack` and `table.unpack` them:
+
+```lua
+local counter = require 'iter.counter'
+local take = require 'iter.take'
+local stored_counter = table.pack(counter())
+for i in take(5, table.unpack(stored_counter, 1, stored_counter.n)) do
+    -- Operate on iterator here
+end
+```
+
+Yes, this is unwieldy.  I don't like this, but I consider it more important to
+align to Lua's semantics than to present an ideal interface that doesn't conform
+to the language or work with other Lua-native iterators.
+
 ## Features
 
 *   Chainable iterator adapters (`map`, `filter`, `take`, etc.).
