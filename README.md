@@ -34,7 +34,7 @@ end
 
 ## API
 
-The main entry point is `iter.chiterator`.
+All modules under `iter` that do not start with an underscore (`_`) are considered public API. While `iter.chiterator` is a common entry point for method chaining, each iterator function can be used on its own.
 
 ### Chiterator
 
@@ -67,3 +67,26 @@ A chainable iterator object.
 *   `:all(predicate)`
 *   `:any(predicate)`
 *   `:iter()`: Returns the raw iterator components.
+
+### Standalone Iterator Functions
+
+The following modules provide iterator functions that can be used directly with Lua's `for` loop:
+
+*   `iter.all(predicate, ...)`
+*   `iter.any(predicate, ...)`
+*   `iter.chain(...)`
+*   `iter.collect(...)`
+*   `iter.coro(func, ...)`
+*   `iter.count(...)`
+*   `iter.counter()`
+*   `iter.enumerate(...)`
+*   `iter.filter(func, ...)`
+*   `iter.fold(init, func, ...)`
+*   `iter.map(func, ...)`
+*   `iter.once(...)`
+*   `iter.reduce(func, ...)`
+*   `iter.skip(n, ...)`
+*   `iter.skip_while(predicate, ...)`
+*   `iter.take(n, ...)`
+*   `iter.take_while(predicate, ...)`
+*   `iter.zip(...)`
