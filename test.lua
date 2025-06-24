@@ -32,6 +32,24 @@ local Closeable = (function()
   end
 end)()
 
+local FailableCloseable = (function()
+  local metatable <const> = {
+    __close = function(self)
+      self.closed = true
+      if self.fail then
+        error('close failed')
+      end
+    end
+  }
+
+  return function(fail)
+    return setmetatable({
+      closed = false,
+      fail = fail,
+    }, metatable)
+  end
+end)()
+
 -- Just yields each input, returning the last one.
 local function yield_all(...)
   local count = select('#', ...)
@@ -341,6 +359,22 @@ function tests.standalone_iterators()
     assert(c1.closed)
     assert(c2.closed)
   end
+  do
+    local c1 = FailableCloseable(true)
+    local c2 = Closeable()
+    local count1 = table.pack(counter())
+    local count2 = table.pack(counter())
+    count1[4] = c1
+    count1.n = math.max(count1.n, 4)
+    count2[4] = c2
+    count2.n = math.max(count2.n, 4)
+    local success, err = pcall(function()
+      for _ in chain({take(1, table.unpack(count1, 1, count1.n))}, {take(1, table.unpack(count2, 1, count2.n))}) do end
+    end)
+    assert(not success)
+    assert(c1.closed)
+    assert(c2.closed)
+  end
 
   -- count
   assert_eq(count(take(5, counter())), 5)
@@ -408,6 +442,22 @@ function tests.standalone_iterators()
     count2[4] = c2
     count2.n = math.max(count2.n, 4)
     for _ in zip({take(1, table.unpack(count1, 1, count1.n))}, {take(1, table.unpack(count2, 1, count2.n))}) do end
+    assert(c1.closed)
+    assert(c2.closed)
+  end
+  do
+    local c1 = FailableCloseable(true)
+    local c2 = Closeable()
+    local count1 = table.pack(counter())
+    local count2 = table.pack(counter())
+    count1[4] = c1
+    count1.n = math.max(count1.n, 4)
+    count2[4] = c2
+    count2.n = math.max(count2.n, 4)
+    local success, err = pcall(function()
+      for _ in zip({take(1, table.unpack(count1, 1, count1.n))}, {take(1, table.unpack(count2, 1, count2.n))}) do end
+    end)
+    assert(not success)
     assert(c1.closed)
     assert(c2.closed)
   end
