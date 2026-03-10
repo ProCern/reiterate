@@ -4,7 +4,7 @@ package = "reiterate"
 version = "dev-1"
 
 source = {
-  url = "git+ssh://git@github.com/ProCern/reiterate.git",
+  url = "git+https://github.com/ProCern/reiterate.git",
 }
 
 description = {

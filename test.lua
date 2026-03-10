@@ -1,3 +1,5 @@
+package.path = package.path .. ';./src/?.lua;./src/?/init.lua'
+
 local Chiterator <const> = require 'reiterate.chiterator'
 local counter <const> = require 'reiterate.counter'
 local take <const> = require 'reiterate.take'

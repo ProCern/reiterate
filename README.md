@@ -14,7 +14,7 @@ iterator they wrap (like `take` and `skip`) then they will do so, and not keep
 the CV within themselves.  If they can't (such as `enumerate`, which changes the
 CV), only then will they take the CV into themselves.
 
-EVen if they do take the CV into themselves, they often return a function,
+Even if they do take the CV into themselves, they often return a function,
 state, and CV as separate components that are needed for iteration, matching Lua
 semantics as closely as possible.
 
@@ -94,7 +94,7 @@ end
 
 ## API
 
-All modules under `iter` that do not start with an underscore (`_`) are considered public API. While `reiterate.chiterator` is a common entry point for method chaining, each iterator function can be used on its own.
+All modules under `reiterate` are considered public API. While `reiterate.chiterator` is a common entry point for method chaining, each iterator function can be used on its own.
 
 ### Chiterator
 
