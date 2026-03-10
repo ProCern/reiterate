@@ -85,7 +85,7 @@ end
 ---@param func fun(...): ... A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function methods:map(func)
-  return construct(map(func, table.unpack(self, 1, self.n)))
+  return construct(map(func, self:iter()))
 end
 
 -- Wrap with a filter, which will use a function that should return a truthy value
@@ -93,13 +93,13 @@ end
 ---@param func fun(...) A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function methods:filter(func)
-  return construct(filter(func, table.unpack(self, 1, self.n)))
+  return construct(filter(func, self:iter()))
 end
 
 -- Prepend the iterator results with an enumeration from 1.
 --- @return iter.Chiterator
 function methods:enumerate()
-  return construct(enumerate(table.unpack(self, 1, self.n)))
+  return construct(enumerate(self:iter()))
 end
 
 -- Skip n items immediately.
@@ -109,7 +109,7 @@ end
 ---@param n integer The number of iterations to skip.
 --- @return iter.Chiterator
 function methods:skip(n)
-  return construct(skip(n, table.unpack(self, 1, self.n)))
+  return construct(skip(n, self:iter()))
 end
 
 -- Skip items immediately while the predicate is true.
@@ -119,21 +119,21 @@ end
 ---@param predicate fun(...): boolean
 --- @return iter.Chiterator
 function methods:skip_while(predicate)
-  return construct(skip_while(predicate, table.unpack(self, 1, self.n)))
+  return construct(skip_while(predicate, self:iter()))
 end
 
 -- Stop after n items.
 ---@param n integer The number of iterations to take.
 --- @return iter.Chiterator
 function methods:take(n)
-  return construct(take(n, table.unpack(self, 1, self.n)))
+  return construct(take(n, self:iter()))
 end
 
 -- Stop when the predicate is false
 ---@param predicate fun(...): boolean
 --- @return iter.Chiterator
 function methods:take_while(predicate)
-  return construct(take_while(predicate, table.unpack(self, 1, self.n)))
+  return construct(take_while(predicate, self:iter()))
 end
 
 -- Fold the iterator into an accumulator (initiated with init) using function fun.
