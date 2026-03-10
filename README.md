@@ -3,7 +3,7 @@
 A functional-style iterator library for Lua 5.4+, inspired by Rust's iterators.
 
 It provides standalone iterator adapter functions that work directly with Lua's
-`for` loop, and a `Chiterator` object that allows chaining them together.
+`for` loop, and a `chiterator` object that allows chaining them together.
 
 ## Install
 
@@ -25,13 +25,13 @@ Even if they do take the CV into themselves, they often return a function,
 state, and CV as separate components that are needed for iteration, matching Lua
 semantics as closely as possible.
 
-This extends to `Chiterator`, which, when used as an iterator directly, will use
+This extends to `chiterator`, which, when used as an iterator directly, will use
 the `for` loop's CV and even state.  It takes the CV and state into itself, but
 these are only used for chaining.
 
-This means that you can't simply assign an iterator or `Chiterator` to a
-variable and use it. Like Lua iterators, if you want to store them as a
-variable, you must `table.pack` and `table.unpack` them:
+This means that you can't simply assign a standalone iterator to a variable and
+use it directly as a loop expression.  Like Lua iterators, if you want to store
+them, you must `table.pack` and `table.unpack` them:
 
 ```lua
 local counter = require 'reiterate.counter'
@@ -45,6 +45,50 @@ end
 Yes, this is unwieldy.  I don't like this, but I consider it more important to
 align to Lua's semantics than to present an ideal interface that doesn't conform
 to the language or work with other Lua-native iterators.
+
+A `chiterator`, on the other hand, stores its iterator components internally, so
+it *can* be assigned to a variable.  You can then use `:iter()` to unpack it for
+a `for` loop, or continue chaining methods on it:
+
+```lua
+local chiterator = require 'reiterate.chiterator'
+local ch = chiterator.counter():take(5):map(function(n) return n * n end)
+
+-- Use :iter() to unpack for a for loop
+for v in ch:iter() do
+    print(v)
+end
+
+-- Or keep chaining
+local sum = chiterator.counter():take(5):fold(0, function(a, b) return a + b end)
+```
+
+All `chiterator` chain methods return all the iterator pieces, so you don't have to call `iter()` as long as you are directly iterating on a chain:
+
+```lua
+local chiterator = require 'reiterate.chiterator'
+local ch = chiterator.counter():take(5)
+
+-- map also unpacks as you expect it to.
+for v in ch:map(function(n) return n * n end) do
+    print(v)
+end
+```
+
+Do not iterate on the chiterator variable directly without calling `:iter()` or a chained function. You will lose the state, CV, and closeable value:
+
+```lua
+local chiterator = require 'reiterate.chiterator'
+local ch = chiterator.counter():take(5):map(function(n) return n * n end)
+
+-- This might sometimes work, but it's always the wrong choice.
+for v in ch do
+    print(v)
+end
+```
+
+Lua's iterator protocol lends itself to footguns like this, but we're doing the
+best we can with what we've got.
 
 You can require individual modules (`require 'reiterate.map'`), the chainable
 interface (`require 'reiterate.chiterator'`), or everything at once:
@@ -63,11 +107,11 @@ end
 ## Quick Start
 
 ```lua
-local Chiterator = require 'reiterate.chiterator'
+local chiterator = require 'reiterate.chiterator'
 
 -- Find the first 5 even square numbers
 local result =
-    Chiterator.counter()
+    chiterator.counter()
     :map(function(i) return i * i end)
     :filter(function(n) return n % 2 == 0 end)
     :take(5)
@@ -105,7 +149,7 @@ iteration (a `for` loop or a consumer like `fold`).  This means you can compose
 transformations over infinite iterators and only pull what you need:
 
 ```lua
-local Chiterator = require 'reiterate.chiterator'
+local chiterator = require 'reiterate.chiterator'
 
 local function is_square(n)
   local root = math.sqrt(n)
@@ -115,9 +159,9 @@ end
 -- Zip a plain counter with an infinite stream of even squares,
 -- then take only the first 5 pairs.
 local result =
-    Chiterator.counter()
+    chiterator.counter()
     :zip(
-        Chiterator.counter()
+        chiterator.counter()
         :filter(is_square)
         :filter(function(n) return n % 2 == 0 end)
     )
@@ -140,33 +184,33 @@ return values of another iterator constructor or of `ipairs`/`pairs`.
 
 ---
 
-### Chiterator
+### chiterator
 
 A chainable iterator object.
 
 ```lua
-local Chiterator = require 'reiterate.chiterator'
+local chiterator = require 'reiterate.chiterator'
 ```
 
-#### `Chiterator(iter, state, control, ...)`
+#### `chiterator(iter, state, control, ...)`
 
-Wraps an existing Lua iterator into a `Chiterator`.  The extra return values
+Wraps an existing Lua iterator into a `chiterator`.  The extra return values
 (e.g. a to-be-closed value) are passed through.
 
 ```lua
-local ch = Chiterator(ipairs{'a', 'b', 'c'})
+local ch = chiterator(ipairs{'a', 'b', 'c'})
 for i, v in ch do print(i, v) end
 -- 1  a
 -- 2  b
 -- 3  c
 ```
 
-#### `Chiterator.counter()`
+#### `chiterator.counter()`
 
 Creates an infinite iterator that yields successive integers starting from 1.
 
 ```lua
-for i in Chiterator.counter():take(3) do
+for i in chiterator.counter():take(3) do
     print(i)
 end
 -- 1
@@ -174,14 +218,14 @@ end
 -- 3
 ```
 
-#### `Chiterator.coro(func, ...)`
+#### `chiterator.coro(func, ...)`
 
 Creates an iterator from a coroutine or function.  Each `coroutine.yield()`
 (and the final return) produces one iteration.  Extra arguments are passed to
 the first resume.
 
 ```lua
-local ch = Chiterator.coro(function(start)
+local ch = chiterator.coro(function(start)
     for i = start, start + 2 do
         coroutine.yield(i, i * 10)
     end
@@ -196,18 +240,18 @@ for a, b in ch do print(a, b) end
 #### `:iter()`
 
 Extracts the raw iterator components `(iter, state, control, ...)` from the
-`Chiterator`.  Useful when you need to pass the iterator to a standalone
+`chiterator`.  Useful when you need to pass the iterator to a standalone
 function or store it.
 
 ```lua
-local iter, state, control = Chiterator.counter():take(3):iter()
+local iter, state, control = chiterator.counter():take(3):iter()
 ```
 
 ---
 
 ### Adapters (chainable)
 
-Adapters return a new `Chiterator`.  They are lazy -- no iteration happens until
+Adapters return a new `chiterator`.  They are lazy -- no iteration happens until
 the chain is consumed.
 
 #### `:map(func)`
@@ -216,13 +260,13 @@ Transforms each iteration's values through `func`.  If `func` returns `nil` as
 its first value, that iteration is skipped (flat-map / filter-map behavior).
 
 ```lua
-Chiterator(ipairs{1, 2, 3})
+chiterator(ipairs{1, 2, 3})
     :map(function(i, v) return i, v * 10 end)
     :collect()
 -- {10, 20, 30}
 
 -- Returning nil skips the element:
-Chiterator.counter():take(6)
+chiterator.counter():take(6)
     :map(function(n)
         if n % 2 == 0 then return n end
         -- odd numbers return nil and are skipped
@@ -237,7 +281,7 @@ Keeps only iterations where `func(...)` returns a truthy value.  Implemented
 via `map`, so it has the same lazy skip behavior.
 
 ```lua
-Chiterator.counter():take(10)
+chiterator.counter():take(10)
     :filter(function(n) return n % 3 == 0 end)
     :enumerate():collect()
 -- {3, 6, 9}
@@ -248,7 +292,7 @@ Chiterator.counter():take(10)
 Yields at most the first `n` iterations, then stops.
 
 ```lua
-Chiterator.counter():take(3):enumerate():collect()
+chiterator.counter():take(3):enumerate():collect()
 -- {1, 2, 3}
 ```
 
@@ -258,7 +302,7 @@ Yields iterations while `predicate(...)` returns true.  Stops permanently on
 the first false.
 
 ```lua
-Chiterator.counter()
+chiterator.counter()
     :take_while(function(i) return i < 4 end)
     :enumerate():collect()
 -- {1, 2, 3}
@@ -271,7 +315,7 @@ rest.  Unlike most adapters, this is eager -- the skipped elements are consumed
 at construction time, not when iteration begins.
 
 ```lua
-Chiterator.counter():skip(3):take(3):enumerate():collect()
+chiterator.counter():skip(3):take(3):enumerate():collect()
 -- {4, 5, 6}
 ```
 
@@ -282,7 +326,7 @@ yields all remaining iterations (even if later ones would match the predicate
 again).
 
 ```lua
-Chiterator.counter()
+chiterator.counter()
     :skip_while(function(i) return i < 15 end)
     :take_while(function(i) return i < 20 end)
     :enumerate():collect()
@@ -294,7 +338,7 @@ Chiterator.counter()
 Prepends a 1-based counter to each iteration's values.
 
 ```lua
-Chiterator(ipairs{'a', 'b', 'c'})
+chiterator(ipairs{'a', 'b', 'c'})
     :map(function(_, v) return v end)
     :enumerate()
     :collect()
@@ -307,14 +351,14 @@ Combines this iterator with one or more other iterators, yielding one
 `table.pack`'d value set from each on every iteration.  Stops as soon as any
 iterator is exhausted.
 
-Each argument should be a `Chiterator` (which is auto-packed) or a packed
+Each argument should be a `chiterator` (which is auto-packed) or a packed
 iterator table.
 
 ```lua
-local letters = Chiterator(ipairs{'a', 'b', 'c'})
+local letters = chiterator(ipairs{'a', 'b', 'c'})
     :map(function(_, v) return v end)
 
-Chiterator.counter()
+chiterator.counter()
     :zip(letters)
     :take(3)
     :map(function(nums, strs) return nums[1], strs[1] end)
@@ -327,11 +371,11 @@ Chiterator.counter()
 Concatenates this iterator with one or more other iterators, yielding all
 elements from each in sequence.
 
-Each argument should be a `Chiterator` (which is auto-packed) or a packed
+Each argument should be a `chiterator` (which is auto-packed) or a packed
 iterator table.
 
 ```lua
-Chiterator(once(1))
+chiterator(once(1))
     :chain(once(2))
     :chain(once(3))
     :enumerate():collect()
@@ -351,11 +395,11 @@ Reduces the iterator into a single accumulated value.  Calls
 values.  Returns the final accumulator.
 
 ```lua
-Chiterator.counter():take(5)
+chiterator.counter():take(5)
     :fold(0, function(sum, n) return sum + n end)
 -- 15
 
-Chiterator.counter():take(5)
+chiterator.counter():take(5)
     :fold({}, function(acc, n)
         acc[10 - n] = n * n
         return acc
@@ -372,7 +416,7 @@ Returns the unpacked final result.  Returns nothing for an empty iterator, or
 the single element unpacked for a one-element iterator.
 
 ```lua
-Chiterator.counter():take(4)
+chiterator.counter():take(4)
     :reduce(function(a, b) return a[1] + b[1] end)
 -- 10
 ```
@@ -383,13 +427,13 @@ Consumes the iterator into a table.  The first two values of each iteration are
 used as key and value.
 
 ```lua
-Chiterator(pairs{x = 1, y = 2})
+chiterator(pairs{x = 1, y = 2})
     :map(function(k, v) return k, v * 10 end)
     :collect()
 -- {x = 10, y = 20}
 
 -- With enumerate, builds a sequence:
-Chiterator.counter():take(3):enumerate():collect()
+chiterator.counter():take(3):enumerate():collect()
 -- {1, 2, 3}
 ```
 
@@ -398,7 +442,7 @@ Chiterator.counter():take(3):enumerate():collect()
 Consumes the entire iterator, returning the number of iterations.
 
 ```lua
-Chiterator.counter():take(100):filter(function(n) return n % 7 == 0 end):count()
+chiterator.counter():take(100):filter(function(n) return n % 7 == 0 end):count()
 -- 14
 ```
 
@@ -409,10 +453,10 @@ iterator returns `true`.  Short-circuits on the first `false`.  If `predicate`
 is omitted, checks the first return value for truthiness.
 
 ```lua
-Chiterator(ipairs{2, 4, 6}):all(function(_, v) return v % 2 == 0 end)
+chiterator(ipairs{2, 4, 6}):all(function(_, v) return v % 2 == 0 end)
 -- true
 
-Chiterator(ipairs{}):all(function() return false end)
+chiterator(ipairs{}):all(function() return false end)
 -- true  (vacuous truth)
 ```
 
@@ -423,10 +467,10 @@ iterator returns `false`.  Short-circuits on the first `true`.  If `predicate`
 is omitted, checks the first return value for truthiness.
 
 ```lua
-Chiterator(ipairs{1, 2, 3}):any(function(_, v) return v == 2 end)
+chiterator(ipairs{1, 2, 3}):any(function(_, v) return v == 2 end)
 -- true
 
-Chiterator(ipairs{}):any()
+chiterator(ipairs{}):any()
 -- false
 ```
 
@@ -437,7 +481,7 @@ Chiterator(ipairs{}):any()
 Every adapter and consumer is also available as a standalone module.  They
 accept the iterator tuple directly, so they compose naturally with Lua's `for`
 loop and with each other (though nesting gets verbose -- that's what
-`Chiterator` is for).
+`chiterator` is for).
 
 #### `reiterate.counter()`
 
