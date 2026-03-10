@@ -16,10 +16,6 @@ local take <const> = require 'reiterate.take'
 local take_while <const> = require 'reiterate.take_while'
 local zip <const> = require 'reiterate.zip'
 
-local table_pack <const> = table.pack
-local table_unpack <const> = table.unpack
-local setmetatable <const> = setmetatable
-
 -- A chainable iterator, which allows chaining iterator transformations for more
 -- reasonable functional-style programming.
 ---@class iter.Chiterator
@@ -43,7 +39,7 @@ end
 
 ---@return iter.Chiterator, ...
 local function construct(iter, ...)
-  local self <const> = table_pack(iter, ...)
+  local self <const> = table.pack(iter, ...)
   -- Construct a chiterator, wrapping with the metatable, and unpacking the
   -- rest and returning them so they can be auto-closed and the like properly.
   return setmetatable(self, metatable), ...
@@ -66,14 +62,14 @@ function M.coro(...)
 end
 
 function methods:iter()
-  return table_unpack(self, 1, self.n)
+  return table.unpack(self, 1, self.n)
 end
 
 -- Wraps the iterator into a chaining iterator, which will iterate all given
 -- iterators in turn.
 --- @return iter.Chiterator
 function methods:chain(...)
-  return construct(chain(table_pack(self:iter()), table_pack(...)))
+  return construct(chain(table.pack(self:iter()), table.pack(...)))
 end
 
 -- Wraps this and the iterator into a zipping iterator, which will iterate all
@@ -81,7 +77,7 @@ end
 -- This stops as soon as any zipped iterator contained stops.
 --- @return iter.Chiterator
 function methods:zip(...)
-  return construct(zip(table_pack(self:iter()), table_pack(...)))
+  return construct(zip(table.pack(self:iter()), table.pack(...)))
 end
 
 -- Wrap the iterator using a mapping function.
@@ -89,7 +85,7 @@ end
 ---@param func fun(...): ... A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function methods:map(func)
-  return construct(map(func, table_unpack(self, 1, self.n)))
+  return construct(map(func, table.unpack(self, 1, self.n)))
 end
 
 -- Wrap with a filter, which will use a function that should return a truthy value
@@ -97,13 +93,13 @@ end
 ---@param func fun(...) A function that takes all the parameters of each iteration.
 --- @return iter.Chiterator
 function methods:filter(func)
-  return construct(filter(func, table_unpack(self, 1, self.n)))
+  return construct(filter(func, table.unpack(self, 1, self.n)))
 end
 
 -- Prepend the iterator results with an enumeration from 1.
 --- @return iter.Chiterator
 function methods:enumerate()
-  return construct(enumerate(table_unpack(self, 1, self.n)))
+  return construct(enumerate(table.unpack(self, 1, self.n)))
 end
 
 -- Skip n items immediately.
@@ -113,7 +109,7 @@ end
 ---@param n integer The number of iterations to skip.
 --- @return iter.Chiterator
 function methods:skip(n)
-  return construct(skip(n, table_unpack(self, 1, self.n)))
+  return construct(skip(n, table.unpack(self, 1, self.n)))
 end
 
 -- Skip items immediately while the predicate is true.
@@ -123,21 +119,21 @@ end
 ---@param predicate fun(...): boolean
 --- @return iter.Chiterator
 function methods:skip_while(predicate)
-  return construct(skip_while(predicate, table_unpack(self, 1, self.n)))
+  return construct(skip_while(predicate, table.unpack(self, 1, self.n)))
 end
 
 -- Stop after n items.
 ---@param n integer The number of iterations to take.
 --- @return iter.Chiterator
 function methods:take(n)
-  return construct(take(n, table_unpack(self, 1, self.n)))
+  return construct(take(n, table.unpack(self, 1, self.n)))
 end
 
 -- Stop when the predicate is false
 ---@param predicate fun(...): boolean
 --- @return iter.Chiterator
 function methods:take_while(predicate)
-  return construct(take_while(predicate, table_unpack(self, 1, self.n)))
+  return construct(take_while(predicate, table.unpack(self, 1, self.n)))
 end
 
 -- Fold the iterator into an accumulator (initiated with init) using function fun.
