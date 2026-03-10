@@ -69,15 +69,15 @@ end
 -- iterators in turn.
 --- @return iter.Chiterator
 function methods:chain(...)
-  return construct(chain(table.pack(self:iter()), table.pack(...)))
+  return construct(chain(self, table.pack(...)))
 end
 
--- Wraps this and the iterator into a zipping iterator, which will iterate all
+-- Wraps this and the iterator into a zipping iterator, which will iterate both
 -- given iterators at once, giving all their values in table.pack bunches.
--- This stops as soon as any zipped iterator contained stops.
+-- This stops as soon as either zipped iterator contained stops.
 --- @return iter.Chiterator
 function methods:zip(...)
-  return construct(zip(table.pack(self:iter()), table.pack(...)))
+  return construct(zip(self, table.pack(...)))
 end
 
 -- Wrap the iterator using a mapping function.

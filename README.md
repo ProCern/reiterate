@@ -347,19 +347,20 @@ chiterator(ipairs{'a', 'b', 'c'})
 
 #### `:zip(...)`
 
-Combines this iterator with one or more other iterators, yielding one
-`table.pack`'d value set from each on every iteration.  Stops as soon as any
-iterator is exhausted.
+Combines this iterator with one other iterator, yielding one `table.pack`'d
+value set from each on every iteration.  Stops as soon as either iterator is
+exhausted.
 
-Each argument should be a `chiterator` (which is auto-packed) or a packed
-iterator table.
+Note that this is different from the standalone `zip` function, which takes
+pre-packed iterators as arguments. This takes exactly one other full unpacked
+iterator.
 
 ```lua
 local letters = chiterator(ipairs{'a', 'b', 'c'})
     :map(function(_, v) return v end)
 
 chiterator.counter()
-    :zip(letters)
+    :zip(letters:iter())
     :take(3)
     :map(function(nums, strs) return nums[1], strs[1] end)
     :collect()
@@ -368,11 +369,12 @@ chiterator.counter()
 
 #### `:chain(...)`
 
-Concatenates this iterator with one or more other iterators, yielding all
-elements from each in sequence.
+Concatenates this iterator with one one other iterator, yielding all elements
+from each in sequence.
 
-Each argument should be a `chiterator` (which is auto-packed) or a packed
-iterator table.
+Note that this is different from the standalone `chain` function, which takes
+pre-packed iterators as arguments. This takes exactly one other full unpacked
+iterator.
 
 ```lua
 chiterator(once(1))
