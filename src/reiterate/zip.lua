@@ -1,4 +1,4 @@
-local close_stack = require('close_stack').close_stack
+local close_stack = require('close-stack').close_stack
 
 ---@class iter.Zip
 ---@field n integer

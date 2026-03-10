@@ -1,4 +1,4 @@
-local close_stack = require('close_stack').close_stack
+local close_stack = require('close-stack').close_stack
 
 -- Wraps iterators into a chaining iterator, which will iterate all given
 -- iterators in turn.  Because of the way Lua iterators work, each iterator
