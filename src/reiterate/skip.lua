@@ -16,10 +16,10 @@ end
 
 -- Take an incoming iterator and skip the first n values.
 return function(n, iter, state, control, ...)
-  local state = {
+  local new_state = {
     iter = iter,
     state = state,
     n = n,
   }
-  return skip, state, control, ...
+  return skip, new_state, control, ...
 end

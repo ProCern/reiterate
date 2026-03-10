@@ -1,27 +1,24 @@
-local all <const> = require 'iter.all'
-local any <const> = require 'iter.any'
-local chain <const> = require 'iter.chain'
-local collect <const> = require 'iter.collect'
-local coro <const> = require 'iter.coro'
-local count <const> = require 'iter.count'
-local counter <const> = require 'iter.counter'
-local enumerate <const> = require 'iter.enumerate'
-local filter <const> = require 'iter.filter'
-local fold <const> = require 'iter.fold'
-local map <const> = require 'iter.map'
-local reduce <const> = require 'iter.reduce'
-local skip <const> = require 'iter.skip'
-local skip_while <const> = require 'iter.skip_while'
-local take <const> = require 'iter.take'
-local take_while <const> = require 'iter.take_while'
-local zip <const> = require 'iter.zip'
+local all <const> = require 'reiterate.all'
+local any <const> = require 'reiterate.any'
+local chain <const> = require 'reiterate.chain'
+local collect <const> = require 'reiterate.collect'
+local coro <const> = require 'reiterate.coro'
+local count <const> = require 'reiterate.count'
+local counter <const> = require 'reiterate.counter'
+local enumerate <const> = require 'reiterate.enumerate'
+local filter <const> = require 'reiterate.filter'
+local fold <const> = require 'reiterate.fold'
+local map <const> = require 'reiterate.map'
+local reduce <const> = require 'reiterate.reduce'
+local skip <const> = require 'reiterate.skip'
+local skip_while <const> = require 'reiterate.skip_while'
+local take <const> = require 'reiterate.take'
+local take_while <const> = require 'reiterate.take_while'
+local zip <const> = require 'reiterate.zip'
 
 local table_pack <const> = table.pack
 local table_unpack <const> = table.unpack
 local setmetatable <const> = setmetatable
-
--- global protection
-local _ENV <const> = nil
 
 -- A chainable iterator, which allows chaining iterator transformations for more
 -- reasonable functional-style programming.
@@ -52,26 +49,19 @@ local function construct(iter, ...)
   return setmetatable(self, metatable), ...
 end
 
-
-local class_metatable = {
-  __name = 'class Chiterator',
-}
-
-local Chiterator = setmetatable({}, class_metatable)
-
-function class_metatable:__call(...)
-  return construct(...)
-end
-
-setmetatable(Chiterator, class_metatable)
+local M = setmetatable({}, {
+  __call = function(_, ...)
+    return construct(...)
+  end,
+})
 
 --- @return iter.Chiterator, ...
-function Chiterator.counter()
+function M.counter()
   return construct(counter())
 end
 
 --- @return iter.Chiterator, ...
-function Chiterator.coro(...)
+function M.coro(...)
   return construct(coro(...))
 end
 
@@ -88,9 +78,7 @@ end
 
 -- Wraps this and the iterator into a zipping iterator, which will iterate all
 -- given iterators at once, giving all their values in table.pack bunches.
--- Because of the way Lua iterators work, each iterator needs to be packed
--- either via table.pack or as a plain array table. This stops as soon as any
--- zipped iterator contained stops.
+-- This stops as soon as any zipped iterator contained stops.
 --- @return iter.Chiterator
 function methods:zip(...)
   return construct(zip(table_pack(self:iter()), table_pack(...)))
@@ -204,4 +192,4 @@ function methods:count()
   return count(self:iter())
 end
 
-return Chiterator
+return M

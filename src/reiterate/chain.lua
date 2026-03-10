@@ -1,4 +1,4 @@
-local close_list = require 'iter._close_iterlist'
+local close_stack = require('close_stack').close_stack
 
 -- Wraps iterators into a chaining iterator, which will iterate all given
 -- iterators in turn.  Because of the way Lua iterators work, each iterator
@@ -9,16 +9,19 @@ local close_list = require 'iter._close_iterlist'
 ---@field [integer] table
 local metatable <const> = {}
 
--- A recursive solution is nicer than this, but may lead to stack overflow
 function metatable:__close()
-  close_list(self, self.current, self.n)
+  local stack <close> = close_stack()
+  for i=self.current, self.n do
+    stack:push(self[i][4])
+  end
 end
 
 ---@param chain iter.Chain
 local function call(chain)
   if chain.current <= chain.n then
     local current <const> = chain[chain.current]
-    local values <const> = table.pack(current[1](current[2], current[3]))
+    local fun <const>, state <const>, cv <const>, closeable <const> = table.unpack(current, 1, 4)
+    local values <const> = table.pack(fun(state, cv))
     current[3] = values[1]
     if values[1] ~= nil then
       return table.unpack(values, 1, values.n)
@@ -32,7 +35,7 @@ local function call(chain)
     -- re-closing the current.
     chain.current = chain.current + 1
     do
-      local _ <close> = current[4]
+      local _ <close> = closeable
       chain[prev_current] = nil
     end
     return call(chain)

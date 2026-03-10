@@ -22,7 +22,7 @@ local function skip(state, control)
   return unpack(output, 1, output.n)
 end
 
--- Take an incoming iterator and skip the first n values.
+-- Take an incoming iterator and skip while the predicate is true.
 return function(predicate, iter, state, control, ...)
   local sw_state = {
     iter = iter,

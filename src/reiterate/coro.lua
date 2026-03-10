@@ -15,7 +15,7 @@ local function check(success, ...)
   if success then
     return ...
   else
-    error((...), 2)
+    error((...), 0)
   end
 end
 

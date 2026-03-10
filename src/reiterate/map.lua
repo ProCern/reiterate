@@ -1,8 +1,6 @@
 local pack = table.pack
 local unpack = table.unpack
 
-local _ENV <const> = nil
-
 local function map(self)
   local state = self.state
   local values = pack(self.iter(state, self.control))

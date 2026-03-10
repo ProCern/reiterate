@@ -49,3 +49,8 @@ Thumbs.db
 *.wmv
 
 .aider*
+
+*.rock
+rock_modules
+lua_modules
+

@@ -1,4 +1,4 @@
-local map <const> = require 'iter.map'
+local map <const> = require 'reiterate.map'
 
 -- Folds the iterator into an accumulator, which is eventually returned.
 -- Like functional fold.  Takes init to be the initial value of the accumulator.

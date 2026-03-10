@@ -1,4 +1,4 @@
-# lua-iter
+# reiterate
 
 A functional-style iterator library for Lua, inspired by Rust's iterators.
 
@@ -27,8 +27,8 @@ variable and use it. Like Lua iterators, if you want to store them as a
 variable, you must `table.pack` and `table.unpack` them:
 
 ```lua
-local counter = require 'iter.counter'
-local take = require 'iter.take'
+local counter = require 'reiterate.counter'
+local take = require 'reiterate.take'
 local stored_counter = table.pack(counter())
 for i in take(5, table.unpack(stored_counter, 1, stored_counter.n)) do
     -- Operate on iterator here
@@ -49,7 +49,7 @@ to the language or work with other Lua-native iterators.
 ## Usage
 
 ```lua
-local Chiterator = require 'iter.chiterator'
+local Chiterator = require 'reiterate.chiterator'
 
 -- Find the first 5 even square numbers
 local result =
@@ -94,7 +94,7 @@ end
 
 ## API
 
-All modules under `iter` that do not start with an underscore (`_`) are considered public API. While `iter.chiterator` is a common entry point for method chaining, each iterator function can be used on its own.
+All modules under `iter` that do not start with an underscore (`_`) are considered public API. While `reiterate.chiterator` is a common entry point for method chaining, each iterator function can be used on its own.
 
 ### Chiterator
 
@@ -132,21 +132,21 @@ A chainable iterator object.
 
 The following modules provide iterator functions that can be used directly with Lua's `for` loop:
 
-*   `iter.all(predicate, ...)`
-*   `iter.any(predicate, ...)`
-*   `iter.chain(...)`
-*   `iter.collect(...)`
-*   `iter.coro(func, ...)`
-*   `iter.count(...)`
-*   `iter.counter()`
-*   `iter.enumerate(...)`
-*   `iter.filter(func, ...)`
-*   `iter.fold(init, func, ...)`
-*   `iter.map(func, ...)`
-*   `iter.once(...)`
-*   `iter.reduce(func, ...)`
-*   `iter.skip(n, ...)`
-*   `iter.skip_while(predicate, ...)`
-*   `iter.take(n, ...)`
-*   `iter.take_while(predicate, ...)`
-*   `iter.zip(...)`
+*   `reiterate.all(predicate, ...)`
+*   `reiterate.any(predicate, ...)`
+*   `reiterate.chain(...)`
+*   `reiterate.collect(...)`
+*   `reiterate.coro(func, ...)`
+*   `reiterate.count(...)`
+*   `reiterate.counter()`
+*   `reiterate.enumerate(...)`
+*   `reiterate.filter(func, ...)`
+*   `reiterate.fold(init, func, ...)`
+*   `reiterate.map(func, ...)`
+*   `reiterate.once(...)`
+*   `reiterate.reduce(func, ...)`
+*   `reiterate.skip(n, ...)`
+*   `reiterate.skip_while(predicate, ...)`
+*   `reiterate.take(n, ...)`
+*   `reiterate.take_while(predicate, ...)`
+*   `reiterate.zip(...)`
