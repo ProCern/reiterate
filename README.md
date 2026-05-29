@@ -218,14 +218,14 @@ end
 -- 3
 ```
 
-#### `chiterator.coro(func, ...)`
+#### `chiterator.coroutine(func, ...)`
 
 Creates an iterator from a coroutine or function.  Each `coroutine.yield()`
 (and the final return) produces one iteration.  Extra arguments are passed to
 the first resume.
 
 ```lua
-local ch = chiterator.coro(function(start)
+local ch = chiterator.coroutine(function(start)
     for i = start, start + 2 do
         coroutine.yield(i, i * 10)
     end
@@ -507,7 +507,7 @@ for v in once('hello') do print(v) end
 -- hello
 ```
 
-#### `reiterate.coro(func, ...)`
+#### `reiterate.coroutine(func, ...)`
 
 Wraps a function (or existing coroutine thread) as an iterator.  Each
 `coroutine.yield()` and the final return produce one iteration.  Extra arguments
@@ -515,8 +515,8 @@ are passed on first resume.  The returned closeable will close the coroutine
 if iteration ends early.
 
 ```lua
-local coro = require 'reiterate.coro'
-for line in coro(function() coroutine.yield('a'); return 'b' end) do
+local coroutine = require 'reiterate.coroutine'
+for line in coroutine(function() coroutine.yield('a'); return 'b' end) do
     print(line)
 end
 -- a

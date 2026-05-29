@@ -2,7 +2,7 @@ local all <const> = require 'reiterate.all'
 local any <const> = require 'reiterate.any'
 local chain <const> = require 'reiterate.chain'
 local collect <const> = require 'reiterate.collect'
-local coro <const> = require 'reiterate.coro'
+local reiterate_coroutine <const> = require 'reiterate.coroutine'
 local count <const> = require 'reiterate.count'
 local counter <const> = require 'reiterate.counter'
 local enumerate <const> = require 'reiterate.enumerate'
@@ -57,8 +57,8 @@ function M.counter()
 end
 
 --- @return iter.Chiterator, ...
-function M.coro(...)
-  return construct(coro(...))
+function M.coroutine(...)
+  return construct(reiterate_coroutine(...))
 end
 
 function methods:iter()

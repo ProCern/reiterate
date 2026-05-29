@@ -1,7 +1,7 @@
 -- Wraps a coroutine or a function in an iterator, so that every yield (and any
 -- returns with values) is treated as the iterator return values.
 -- The values passed in are passed into the first call of coroutine.resume.
----@class iter.Coro
+---@class iter.Coroutine
 ---@field coroutine thread
 ---@field args? {n: integer, [integer]: any}
 local metatable <const> = {}
@@ -19,13 +19,13 @@ local function check(success, ...)
   end
 end
 
----@param self iter.Coro
+---@param self iter.Coroutine
 local function call(self)
   local status <const> = coroutine.status(self.coroutine)
   assert(status == 'dead' or status == 'suspended', 'Coroutine must be dead or suspended')
   if status == 'suspended' then
-    if self.args then
-      local args = self.args
+    local args = self.args
+    if args then
       self.args = nil
 
       return check(coroutine.resume(self.coroutine, table.unpack(args, 1, args.n)))
@@ -35,13 +35,13 @@ local function call(self)
   end
 end
 
----@return (fun(coro: iter.Coro): any[]), iter.Coro, nil, iter.Coro
+---@return (fun(coro: iter.Coroutine): any[]), iter.Coroutine, nil, iter.Coroutine
 return function(coro, ...)
   if type(coro) ~= 'thread' then
     coro = coroutine.create(coro)
   end
 
-  ---@type iter.Coro
+  ---@type iter.Coroutine
   local self <const> = setmetatable({coroutine = coro}, metatable)
   self.args = table.pack(...)
   return call, self, nil, self

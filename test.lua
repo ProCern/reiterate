@@ -286,9 +286,9 @@ function tests.chiterator()
     :collect(), {15, 16, 17, 18, 19})
 end
 
-function tests.coro()
-  assert_eq(iter.collect(iter.enumerate(iter.coro(yield_all, 'foo', 'bar', 'baz'))), {'foo', 'bar', 'baz'})
-  assert_eq(iter.chiterator.coro(yield_all, 'foo', 'bar', 'baz'):enumerate():collect(), {'foo', 'bar', 'baz'})
+function tests.coroutine()
+  assert_eq(iter.collect(iter.enumerate(iter.coroutine(yield_all, 'foo', 'bar', 'baz'))), {'foo', 'bar', 'baz'})
+  assert_eq(iter.chiterator.coroutine(yield_all, 'foo', 'bar', 'baz'):enumerate():collect(), {'foo', 'bar', 'baz'})
 end
 
 function tests.standalone_iterators()

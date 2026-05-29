@@ -4,7 +4,7 @@ return {
   chain = require 'reiterate.chain',
   chiterator = require 'reiterate.chiterator',
   collect = require 'reiterate.collect',
-  coro = require 'reiterate.coro',
+  coroutine = require 'reiterate.coroutine',
   count = require 'reiterate.count',
   counter = require 'reiterate.counter',
   enumerate = require 'reiterate.enumerate',
